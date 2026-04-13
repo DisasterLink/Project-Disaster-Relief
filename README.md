@@ -1,68 +1,99 @@
 # DisasterLink: Disaster Relief Coordination Platform
 
-A real-time, comprehensive disaster relief system designed to connect civilians in need with rapid-response volunteer forces and administrative command centers. 
+A real-time, full-stack disaster relief system connecting people who need help with volunteers and admins.
 
-## 🌟 Key Features
-- **🚨 3-Tier Role System:** Dedicated portals for Civilians, Volunteers, and Admins.
-- **🗺️ Live Map Tracking:** Pinpoint SOS locations and resource drop-offs in real time via Leaflet.
-- **⚡ Real-Time WebSockets:** Powered by `Socket.io`, providing instant SOS requests, status updates, and assignment notifications.
-- **📦 Global Resource Inventory:** Manage critical supplies like Medical, Food, Water, and Shelter.
-- **📊 Analytics Dashboard:** Recharts-powered graphs and data tables for high-level incident oversight and CSV exports.
+## Key Features
+- JWT authentication with MongoDB-backed users
+- Role-based access control (`user`, `volunteer`, `admin`)
+- SOS lifecycle (create, assign, track, resolve)
+- Real-time updates via Socket.IO
+- Admin resource and volunteer management
 
-## 🛠️ Technology Stack
-- **Frontend:** React 19, TypeScript, React Router v7, TailwindCSS, React-Leaflet, Recharts.
-- **Backend:** Node.js, Express, MongoDB (Mongoose), Socket.io.
-- **Authentication:** JWT (JSON Web Tokens) with Bcrypt hashing.
-- **Optimization:** React lazy loading, Error Boundaries, custom suspense fallbacks.
+## Tech Stack
+- Frontend: React + TypeScript + Vite
+- Backend: Node.js + Express + Mongoose + Socket.IO
+- Database: MongoDB Atlas
 
-## 🚀 How to Run Locally
+## Project Structure
+- `server/models`: Mongoose schemas
+- `server/controllers`: route handlers
+- `server/routes`: API routes
+- `server/middleware`: auth and RBAC guards
+- `client/src/api`: API client + interceptors
+- `client/src/context`: auth state management
+- `client/src/hooks`: socket hook
 
-### 1. Backend Server Setup
-From the project root:
+## Environment Setup
+
+### 1) Backend `.env` (`server/.env`)
+Use your own Atlas URI and secure JWT secret:
+
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://<username>:<password>@<cluster>/<db>?retryWrites=true&w=majority
+JWT_SECRET=replace_with_a_long_random_secret
+JWT_EXPIRE=7d
+CLIENT_URL=http://localhost:5173
+NODE_ENV=development
+```
+
+### 2) Frontend `.env` (`client/.env`)
+
+```env
+VITE_API_URL=http://localhost:5000
+```
+
+You can also omit `VITE_API_URL` to use Vite proxy (`/api` and `/socket.io`).
+
+## Run Locally
+
+### Backend
 ```bash
 cd server
 npm install
-npm run start
+npm run dev
 ```
-*Note: The server uses `mongodb-memory-server` as a local fast-booting database for seamless offline/demo playback if no live remote MongoURI is available.*
 
-### 2. Frontend Client Setup
-In a new terminal, from the project root:
+### Frontend (new terminal)
 ```bash
 cd client
 npm install
 npm run dev
 ```
 
-## 🔐 Demo Credentials
-You can securely demo the platform with these pre-seeded accounts:
-- **Admin:** `admin@demo.com` / `admin123`
-- **Volunteer:** `vol@demo.com` / `vol123`
-- **Civilian:** `civil@demo.com` / `civil123`
+## Seed Admin (Optional)
+This project does not rely on demo users. Use seed to create an admin account:
 
-## 🗂️ Production Deployment
-To deploy this project to production (e.g. Vercel, Render), ensure the following `.env` settings are placed correctly.
-**Server `.env`:**
-```env
-PORT=5000
-MONGO_URI=mongodb+srv://<your_cluster_url>
-JWT_SECRET=supersecret123
-CLIENT_URL=https://your-frontend-domain.vercel.app
-```
-
-**Client `.env`:**
-```env
-VITE_API_URL=https://your-backend-domain.onrender.com
-```
-
-Build the client with:
 ```bash
-npm run build
+cd server
+npm run seed
 ```
-The output will be in `client/dist`.
 
-## 🎓 Evaluation Notes
-This platform has been architected with:
-- **Resilience:** Fallbacks for unreliable networks.
-- **Security:** Guarded protected routes and secure JWT storage.
-- **UX Polish:** Aesthetic skeleton loaders, page-transition animations, and highly responsive layouts.
+Optional env vars for seeding:
+- `SEED_ADMIN_NAME`
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_PASSWORD`
+- `SEED_DEMO=true` (adds sample user/volunteer/data)
+
+## Auth API
+- `POST /api/auth/register` (roles allowed from public: `user`, `volunteer`)
+- `POST /api/auth/login`
+- `GET /api/auth/me` (JWT required)
+- `PATCH /api/auth/availability` (`volunteer` only)
+
+## Admin APIs
+- `PATCH /api/users/:id/promote` (`admin` only)
+- `GET /api/users`
+- `GET /api/users/volunteers`
+
+## Troubleshooting
+- Atlas `ECONNREFUSED` or `querySrv` errors:
+  - verify `MONGO_URI`
+  - whitelist your current IP in Atlas Network Access
+  - ensure Atlas cluster is active
+- Vite proxy errors:
+  - ensure backend is running on port `5000`
+  - ensure `CLIENT_URL` in backend `.env` matches frontend URL
+- Socket reconnect issues:
+  - ensure `/socket.io` is reachable through Vite proxy or `VITE_API_URL`
+  - check backend logs for connect/disconnect reasons

@@ -1,46 +1,39 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Protect routes — verify JWT
 const protect = async (req, res, next) => {
-  let token;
+  const authHeader = req.headers.authorization || '';
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    token = req.headers.authorization.split(' ')[1];
+  if (!authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Not authorized. Missing bearer token.' });
   }
 
-  if (!token) {
-    return res.status(401).json({ success: false, message: 'Not authorized, no token' });
-  }
+  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password');
 
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'User not found' });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found for token.' });
     }
 
-    next();
+    req.user = user.toSafeObject ? user.toSafeObject() : user;
+    return next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: 'Token is invalid or expired' });
+    return res.status(401).json({ success: false, message: 'Token is invalid or expired.' });
   }
 };
 
-// Role-based access control middleware factory
-const authorize = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: `Role '${req.user.role}' is not authorized to access this route`,
-      });
-    }
-    next();
-  };
+const authorize = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: `Role '${req.user?.role || 'unknown'}' is not authorized to access this route`,
+    });
+  }
+
+  return next();
 };
 
 module.exports = { protect, authorize };

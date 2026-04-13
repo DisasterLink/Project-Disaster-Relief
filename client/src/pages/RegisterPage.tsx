@@ -1,28 +1,40 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
-import { AlertTriangle, Mail, Lock, User, Phone, Shield, Heart } from 'lucide-react'
+import { AlertTriangle, Mail, Lock, User, Phone, Heart } from 'lucide-react'
 
 const roles = [
-  { value: 'civilian', label: 'I need help', icon: User, desc: 'Submit emergency SOS requests' },
+  { value: 'user', label: 'I need help', icon: User, desc: 'Submit emergency SOS requests' },
   { value: 'volunteer', label: 'I want to help', icon: Heart, desc: 'Respond to SOS requests as a field volunteer' },
-]
+] as const
 
 export default function RegisterPage() {
   const { register } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'civilian' as 'civilian' | 'volunteer' })
+  const [searchParams] = useSearchParams()
+  const initialRole = searchParams.get('role') === 'volunteer' ? 'volunteer' : 'user'
+  const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: initialRole as 'user' | 'volunteer' })
   const [loading, setLoading] = useState(false)
+
+  const getPostRegisterRoute = (role: string) => {
+    if (role === 'admin') return '/admin'
+    if (role === 'volunteer') return '/volunteer'
+    return '/my-requests'
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return }
+    if (form.password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+
     setLoading(true)
     try {
-      await register(form)
+      const createdUser = await register(form)
       toast.success('Account created successfully!')
-      navigate('/')
+      navigate(getPostRegisterRoute(createdUser.role), { replace: true })
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Registration failed')
     } finally {
@@ -46,20 +58,22 @@ export default function RegisterPage() {
           <p style={{ color: 'var(--color-text-muted)', fontSize: 14, marginTop: 4 }}>Join DisasterLink today</p>
         </div>
 
-        {/* Role selection */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
           {roles.map(r => {
             const Icon = r.icon
             const active = form.role === r.value
             return (
-              <button key={r.value} type="button"
-                onClick={() => setForm(p => ({ ...p, role: r.value as any }))}
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => setForm(p => ({ ...p, role: r.value }))}
                 style={{
                   padding: '14px 12px', borderRadius: 10, textAlign: 'center', cursor: 'pointer',
                   border: `2px solid ${active ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
                   background: active ? 'rgba(239,68,68,0.1)' : 'var(--glass-bg)',
                   transition: 'all 0.2s'
-                }}>
+                }}
+              >
                 <Icon size={20} color={active ? '#ef4444' : '#9ca3af'} style={{ margin: '0 auto 6px' }} />
                 <div style={{ fontWeight: 600, fontSize: 13, color: active ? '#ef4444' : 'var(--color-text)' }}>{r.label}</div>
                 <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{r.desc}</div>

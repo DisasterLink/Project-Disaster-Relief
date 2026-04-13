@@ -11,13 +11,19 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showPass, setShowPass] = useState(false)
 
+  const getPostLoginRoute = (role: string) => {
+    if (role === 'admin') return '/admin'
+    if (role === 'volunteer') return '/volunteer'
+    return '/my-requests'
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     try {
-      await login(form.email, form.password)
+      const loggedInUser = await login(form.email, form.password)
       toast.success('Welcome back!')
-      navigate('/')
+      navigate(getPostLoginRoute(loggedInUser.role), { replace: true })
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Login failed')
     } finally {
@@ -33,7 +39,6 @@ export default function LoginPage() {
       padding: 20
     }}>
       <div className="glass fade-in" style={{ width: '100%', maxWidth: 420, padding: 40 }}>
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ display: 'inline-flex', background: '#ef4444', borderRadius: 12, padding: 12, marginBottom: 12 }}>
             <AlertTriangle size={28} color="white" />
@@ -67,7 +72,7 @@ export default function LoginPage() {
                 type={showPass ? 'text' : 'password'}
                 className="input-field"
                 style={{ paddingLeft: 38, paddingRight: 38 }}
-                placeholder="••••••••"
+                placeholder="********"
                 value={form.password}
                 onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                 required
@@ -84,15 +89,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Demo credentials */}
-        <div style={{ marginTop: 20, padding: 14, background: 'rgba(59,130,246,0.08)', borderRadius: 8, border: '1px solid rgba(59,130,246,0.2)' }}>
-          <p style={{ fontSize: 12, color: '#60a5fa', fontWeight: 600, marginBottom: 6 }}>🔑 Demo Accounts</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Admin: admin@demo.com / admin123</p>
-          <p style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Volunteer: vol@demo.com / vol123</p>
-        </div>
-
         <p style={{ textAlign: 'center', marginTop: 20, fontSize: 14, color: 'var(--color-text-muted)' }}>
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link to="/register" style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}>Register</Link>
         </p>
       </div>

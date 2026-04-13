@@ -19,16 +19,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Password is required'],
       minlength: 6,
-      select: false, // never returned in queries by default
+      select: false,
     },
     role: {
       type: String,
-      enum: ['admin', 'volunteer', 'civilian'],
-      default: 'civilian',
+      enum: ['user', 'volunteer', 'admin'],
+      default: 'user',
     },
     phone: {
       type: String,
       trim: true,
+      default: '',
     },
     location: {
       type: {
@@ -37,13 +38,13 @@ const userSchema = new mongoose.Schema(
         default: 'Point',
       },
       coordinates: {
-        type: [Number], // [longitude, latitude]
+        type: [Number],
         default: [0, 0],
       },
     },
     isAvailable: {
       type: Boolean,
-      default: true, // for volunteers
+      default: true,
     },
     avatar: {
       type: String,
@@ -53,19 +54,31 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Create 2dsphere index for geospatial queries
 userSchema.index({ location: '2dsphere' });
 
-// Hash password before saving
-userSchema.pre('save', async function () {
+userSchema.pre('save', async function saveHook() {
   if (!this.isModified('password')) return;
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Compare entered password with hashed
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.matchPassword = function matchPassword(enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
+};
+
+userSchema.methods.toSafeObject = function toSafeObject() {
+  return {
+    _id: this._id,
+    name: this.name,
+    email: this.email,
+    role: this.role,
+    phone: this.phone,
+    isAvailable: this.isAvailable,
+    location: this.location,
+    createdAt: this.createdAt,
+    updatedAt: this.updatedAt,
+  };
 };
 
 module.exports = mongoose.model('User', userSchema);

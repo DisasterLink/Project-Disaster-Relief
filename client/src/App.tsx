@@ -4,18 +4,16 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Toaster } from 'react-hot-toast'
 
-// Lazy load pages for code splitting
 const HomePage = React.lazy(() => import('./pages/HomePage'))
 const LoginPage = React.lazy(() => import('./pages/LoginPage'))
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'))
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'))
 const VolunteerDashboard = React.lazy(() => import('./pages/VolunteerDashboard'))
-const CivilianDashboard = React.lazy(() => import('./pages/CivilianDashboard'))
+const UserDashboard = React.lazy(() => import('./pages/CivilianDashboard'))
 const SOSPage = React.lazy(() => import('./pages/SOSPage'))
 const ResourcesPage = React.lazy(() => import('./pages/ResourcesPage'))
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'))
 
-// Full-screen loading spinner
 const PageLoader = () => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', flexDirection: 'column', gap: 14, background: 'var(--color-bg)' }}>
     <div style={{ width: 44, height: 44, border: '3px solid rgba(239,68,68,0.2)', borderTop: '3px solid #ef4444', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -24,7 +22,6 @@ const PageLoader = () => (
   </div>
 )
 
-// Protected route wrapper with RBAC
 const ProtectedRoute = ({ children, roles }: { children: React.ReactNode; roles?: string[] }) => {
   const { user, loading } = useAuth()
   if (loading) return <PageLoader />
@@ -36,35 +33,29 @@ const ProtectedRoute = ({ children, roles }: { children: React.ReactNode; roles?
 const AppRoutes = () => {
   const { user } = useAuth()
 
-  // Role-based default redirect after login
   const afterLogin = user?.role === 'admin'
     ? '/admin'
     : user?.role === 'volunteer'
-    ? '/volunteer'
-    : user?.role === 'civilian'
-    ? '/my-requests'
-    : '/'
+      ? '/volunteer'
+      : user?.role === 'user'
+        ? '/my-requests'
+        : '/'
 
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={user ? <Navigate to={afterLogin} replace /> : <LoginPage />} />
         <Route path="/register" element={user ? <Navigate to={afterLogin} replace /> : <RegisterPage />} />
 
-        {/* Civilian */}
-        <Route path="/my-requests" element={<ProtectedRoute roles={['civilian']}><CivilianDashboard /></ProtectedRoute>} />
-        <Route path="/sos" element={<ProtectedRoute roles={['civilian']}><SOSPage /></ProtectedRoute>} />
+        <Route path="/my-requests" element={<ProtectedRoute roles={['user']}><UserDashboard /></ProtectedRoute>} />
+        <Route path="/sos" element={<ProtectedRoute roles={['user']}><SOSPage /></ProtectedRoute>} />
 
-        {/* Volunteer */}
         <Route path="/volunteer" element={<ProtectedRoute roles={['volunteer']}><VolunteerDashboard /></ProtectedRoute>} />
 
-        {/* Admin */}
         <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/resources" element={<ProtectedRoute roles={['admin']}><ResourcesPage /></ProtectedRoute>} />
 
-        {/* 404 */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

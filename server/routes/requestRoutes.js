@@ -11,13 +11,12 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// All routes require authentication
 router.use(protect);
 
 router.get('/stats', authorize('admin'), getStats);
-router.get('/nearby', getNearbyRequests);
+router.get('/nearby', authorize('admin', 'volunteer'), getNearbyRequests);
 router.get('/', getRequests);
-router.post('/', createRequest);
+router.post('/', authorize('user'), createRequest);
 router.get('/:id', getRequest);
 router.patch('/:id/status', authorize('admin'), updateRequestStatus);
 

@@ -110,7 +110,7 @@ export default function HomePage() {
     if (!user) return '/login'
     if (user.role === 'admin') return '/admin'
     if (user.role === 'volunteer') return '/volunteer'
-    return '/my-requests'  // civilian dashboard
+    return '/my-requests'  // user dashboard
   }
 
   const filteredRequests = requests.filter(r => {
@@ -273,8 +273,8 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* SOS FAB — civilians */}
-          {user?.role === 'civilian' && (
+          {/* SOS FAB — users */}
+          {user?.role === 'user' && (
             <button onClick={() => navigate('/sos')} className="sos-btn" style={{
               position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)',
               zIndex: 1000, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', color: 'white',
@@ -297,7 +297,7 @@ export default function HomePage() {
                 🌍 <strong style={{ color: 'white' }}>DisasterLink</strong> — Real-time disaster coordination
               </p>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                <Link to="/register?role=civilian" className="btn-primary" style={{ textDecoration: 'none', padding: '8px 18px', fontSize: 13 }}>🆘 Need Help?</Link>
+                <Link to="/register?role=user" className="btn-primary" style={{ textDecoration: 'none', padding: '8px 18px', fontSize: 13 }}>🆘 Need Help?</Link>
                 <Link to="/register?role=volunteer" className="btn-secondary" style={{ textDecoration: 'none', padding: '8px 18px', fontSize: 13 }}>🤝 Volunteer</Link>
                 <Link to="/login" className="btn-secondary" style={{ textDecoration: 'none', padding: '8px 18px', fontSize: 13 }}>Login</Link>
               </div>
